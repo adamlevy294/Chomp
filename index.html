@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f1e7">
+  <title>Chomp — Chocolate Showdown</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: ui-rounded, "Avenir Next", Avenir, system-ui, sans-serif;
+      color: #38251f;
+      background: #f7f1e7;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --brown: #6b3d2c;
+      --dark-brown: #47291f;
+      --cream: #fffaf1;
+      --pink: #f6a2a3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100svh;
+      margin: 0;
+      padding: max(20px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(ellipse at 50% 0%, #fffdf8 0, transparent 53%),
+        #f7f1e7;
+    }
+
+    button { font: inherit; }
+
+    .game {
+      width: min(100%, 430px);
+      margin: auto;
+    }
+
+    header { text-align: center; }
+
+    .eyebrow {
+      margin: 0 0 3px;
+      color: #9a6f5b;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--dark-brown);
+      font-size: clamp(2.5rem, 12vw, 3.5rem);
+      font-weight: 950;
+      letter-spacing: -.075em;
+      line-height: 1;
+    }
+
+    .subtitle {
+      margin: 8px 0 20px;
+      color: #876e61;
+      font-size: .94rem;
+    }
+
+    .status-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 70px;
+      margin-bottom: 15px;
+      padding: 12px 15px;
+      border: 1px solid #eee1cf;
+      border-radius: 20px;
+      background: var(--cream);
+      box-shadow: 0 5px 16px #67452a0c;
+    }
+
+    .avatar {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      place-items: center;
+      border-radius: 14px;
+      background: #f2e5d3;
+      font-size: 1.35rem;
+    }
+
+    .status-copy { min-width: 0; text-align: left; }
+    .status-title { margin: 0; font-size: .96rem; font-weight: 850; }
+    .status-hint { margin: 3px 0 0; color: #927d6e; font-size: .77rem; }
+
+    .board-wrap {
+      padding: clamp(11px, 3.5vw, 16px);
+      border: 1px solid #e8d8c3;
+      border-radius: 25px;
+      background: #efe2ce;
+      box-shadow: 0 12px 28px #5c392318, inset 0 2px 3px #ffffffa6;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(5px, 1.8vw, 8px);
+      width: 100%;
+      aspect-ratio: 1;
+    }
+
+    .tile {
+      position: relative;
+      display: grid;
+      min-width: 0;
+      min-height: 0;
+      place-items: center;
+      padding: 0;
+      border: 1px solid #81533c;
+      border-radius: clamp(8px, 2.5vw, 13px);
+      background: linear-gradient(145deg, #98674d, #77452f 76%);
+      box-shadow: inset 1px 2px 2px #ffffff35, inset -2px -3px 2px #43241742, 0 3px 0 #583321;
+      color: #f9e3c9;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 110ms ease, filter 110ms ease, opacity 150ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tile::before {
+      position: absolute;
+      inset: 4px;
+      border: 1px solid #ffffff24;
+      border-radius: inherit;
+      content: "";
+      pointer-events: none;
+    }
+
+    .tile:not(:disabled):hover { filter: brightness(1.13); transform: translateY(-2px); }
+    .tile:not(:disabled):active { transform: translateY(1px); }
+    .tile:focus-visible, .new-game:focus-visible { outline: 3px solid #df8d59; outline-offset: 3px; }
+    .tile:disabled { cursor: default; }
+
+    .tile.empty {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .tile.empty::before { display: none; }
+
+    .tile.poison {
+      z-index: 1;
+      border-color: #9c3e48;
+      background: linear-gradient(145deg, #f8b1a3, #e8797d 78%);
+      box-shadow: inset 1px 2px 2px #ffffff8a, inset -2px -3px 2px #943b4930, 0 3px 0 #b6535c;
+      color: #6d2831;
+      font-size: clamp(1.45rem, 7vw, 2rem);
+    }
+    .tile.poison::before { border-color: #ffffff65; }
+    .tile.poison:disabled:not(.empty) { opacity: 1; }
+
+    .rules {
+      margin: 15px 3px 0;
+      color: #806b5e;
+      font-size: .79rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .remaining { color: #8c7565; font-size: .8rem; font-weight: 700; }
+
+    .new-game {
+      min-height: 46px;
+      padding: 0 19px;
+      border: 0;
+      border-radius: 15px;
+      background: var(--brown);
+      box-shadow: 0 4px 0 #4e2d22;
+      color: #fffaf1;
+      font-size: .87rem;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .new-game:active { transform: translateY(2px); box-shadow: 0 2px 0 #4e2d22; }
+
+    @media (max-height: 700px) {
+      .subtitle { margin-bottom: 12px; }
+      .status-card { min-height: 60px; margin-bottom: 11px; }
+      .avatar { width: 36px; height: 36px; flex-basis: 36px; }
+      .rules { margin-top: 10px; }
+      .footer { margin-top: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="game">
+    <header>
+      <p class="eyebrow">A bite-sized strategy game</p>
+      <h1>Chomp<span aria-hidden="true">!</span></h1>
+      <p class="subtitle">Chocolate showdown · 5 × 5</p>
+    </header>
+
+    <section class="status-card" aria-live="polite" aria-atomic="true">
+      <div class="avatar" id="status-avatar" aria-hidden="true">🍫</div>
+      <div class="status-copy">
+        <p class="status-title" id="status-title">Your turn</p>
+        <p class="status-hint" id="status-hint">Pick a chocolate square to chomp.</p>
+      </div>
+    </section>
+
+    <section class="board-wrap" aria-label="Chomp game board">
+      <div class="board" id="board" role="group" aria-label="5 by 5 chocolate board"></div>
+    </section>
+
+    <p class="rules">Chomp a square to eat it and every square above and to its right.<br>The pink square is poison — don’t eat it!</p>
+
+    <div class="footer">
+      <span class="remaining" id="remaining" aria-live="polite">25 squares left</span>
+      <button class="new-game" id="new-game" type="button">New game ↻</button>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const SIZE = 5;
+      const boardElement = document.querySelector("#board");
+      const statusAvatar = document.querySelector("#status-avatar");
+      const statusTitle = document.querySelector("#status-title");
+      const statusHint = document.querySelector("#status-hint");
+      const remainingElement = document.querySelector("#remaining");
+      const newGameButton = document.querySelector("#new-game");
+
+      let widths;
+      let gameOver;
+      let computerTurn;
+      let turnTimer;
+      let gameNumber = 0;
+
+      function setStatus(title, hint, avatar) {
+        statusTitle.textContent = title;
+        statusHint.textContent = hint;
+        statusAvatar.textContent = avatar;
+      }
+
+      function render() {
+        boardElement.replaceChildren();
+        let count = 0;
+
+        for (let row = 0; row < SIZE; row += 1) {
+          for (let column = 0; column < SIZE; column += 1) {
+            const tile = document.createElement("button");
+            const poison = row === SIZE - 1 && column === 0;
+            const present = column < widths[row];
+            tile.type = "button";
+            tile.className = "tile";
+
+            if (!present) {
+              tile.classList.add("empty");
+              tile.disabled = true;
+              tile.setAttribute("aria-label", `Row ${row + 1}, column ${column + 1}, already chomped`);
+            } else {
+              count += 1;
+              if (poison) {
+                tile.classList.add("poison");
+                tile.textContent = "☠";
+                tile.setAttribute("aria-label", "Poison square, bottom left");
+              } else {
+                tile.textContent = "✦";
+                tile.setAttribute("aria-label", `Chocolate square, row ${row + 1}, column ${column + 1}`);
+              }
+              tile.disabled = gameOver || computerTurn;
+              tile.addEventListener("click", () => makeMove(row, column));
+            }
+
+            boardElement.append(tile);
+          }
+        }
+
+        remainingElement.textContent = `${count} ${count === 1 ? "square" : "squares"} left`;
+      }
+
+      function makeMove(row, column) {
+        if (gameOver || computerTurn || column >= widths[row]) return;
+
+        if (row === SIZE - 1 && column === 0) {
+          gameOver = true;
+          setStatus("You chomped the poison!", "The computer wins this round. Fancy a rematch?", "☠️");
+          render();
+          return;
+        }
+
+        for (let currentRow = 0; currentRow <= row; currentRow += 1) {
+          widths[currentRow] = Math.min(widths[currentRow], column);
+        }
+
+        computerTurn = true;
+        setStatus("Computer’s turn…", "Let’s see what it picks.", "🤖");
+        render();
+        const thisGame = gameNumber;
+        turnTimer = window.setTimeout(() => {
+          if (thisGame === gameNumber && !gameOver) computerMove();
+        }, 550);
+      }
+
+      function computerMove() {
+        const winningMove = findWinningMove(widths);
+        const move = winningMove || firstSafeMove(widths);
+
+        if (!move) {
+          gameOver = true;
+          computerTurn = false;
+          setStatus("You win!", "The computer has no safe squares left. Well played!", "🎉");
+          render();
+          return;
+        }
+
+        for (let row = 0; row <= move.row; row += 1) {
+          widths[row] = Math.min(widths[row], move.column);
+        }
+
+        computerTurn = false;
+        setStatus("Your turn", "Pick a chocolate square to chomp.", "🍫");
+        render();
+      }
+
+      function firstSafeMove(state) {
+        for (let row = 0; row < SIZE; row += 1) {
+          for (let column = 0; column < state[row]; column += 1) {
+            if (row !== SIZE - 1 || column !== 0) return { row, column };
+          }
+        }
+        return null;
+      }
+
+      function findWinningMove(state) {
+        const memo = new Map();
+        const isWinning = (position) => {
+          const key = position.join("");
+          if (memo.has(key)) return memo.get(key);
+
+          for (let row = 0; row < SIZE; row += 1) {
+            for (let column = 0; column < position[row]; column += 1) {
+              if (row === SIZE - 1 && column === 0) continue;
+
+              const next = position.slice();
+              for (let currentRow = 0; currentRow <= row; currentRow += 1) {
+                next[currentRow] = Math.min(next[currentRow], column);
+              }
+              if (!isWinning(next)) {
+                memo.set(key, true);
+                return true;
+              }
+            }
+          }
+
+          memo.set(key, false);
+          return false;
+        };
+
+        for (let row = 0; row < SIZE; row += 1) {
+          for (let column = 0; column < state[row]; column += 1) {
+            if (row === SIZE - 1 && column === 0) continue;
+
+            const next = state.slice();
+            for (let currentRow = 0; currentRow <= row; currentRow += 1) {
+              next[currentRow] = Math.min(next[currentRow], column);
+            }
+            if (!isWinning(next)) return { row, column };
+          }
+        }
+        return null;
+      }
+
+      function startGame() {
+        gameNumber += 1;
+        window.clearTimeout(turnTimer);
+        widths = Array(SIZE).fill(SIZE);
+        gameOver = false;
+        computerTurn = false;
+        setStatus("Your turn", "Pick a chocolate square to chomp.", "🍫");
+        render();
+      }
+
+      newGameButton.addEventListener("click", startGame);
+      startGame();
+    })();
+  </script>
+</body>
+</html>

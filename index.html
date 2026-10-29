@@ -93,6 +93,33 @@
     .status-title { margin: 0; font-size: .96rem; font-weight: 850; }
     .status-hint { margin: 3px 0 0; color: #927d6e; font-size: .77rem; }
 
+    .difficulty-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border: 1px solid #eee1cf;
+      border-radius: 16px;
+      background: var(--cream);
+    }
+
+    .difficulty-label { color: #806b5e; font-size: .82rem; font-weight: 750; }
+
+    .difficulty-select {
+      min-height: 38px;
+      padding: 0 30px 0 12px;
+      border: 1px solid #e8d8c3;
+      border-radius: 11px;
+      background: #fffaf1;
+      color: var(--dark-brown);
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 800;
+    }
+    .difficulty-select:focus-visible { outline: 3px solid #df8d59; outline-offset: 2px; }
+
     .board-wrap {
       padding: clamp(11px, 3.5vw, 16px);
       border: 1px solid #e8d8c3;
@@ -213,6 +240,15 @@
       <p class="subtitle">Chocolate showdown · 5 × 5</p>
     </header>
 
+    <div class="difficulty-row">
+      <label class="difficulty-label" for="difficulty">Computer difficulty</label>
+      <select class="difficulty-select" id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard" selected>Hard</option>
+      </select>
+    </div>
+
     <section class="status-card" aria-live="polite" aria-atomic="true">
       <div class="avatar" id="status-avatar" aria-hidden="true">🍫</div>
       <div class="status-copy">
@@ -242,6 +278,7 @@
       const statusHint = document.querySelector("#status-hint");
       const remainingElement = document.querySelector("#remaining");
       const newGameButton = document.querySelector("#new-game");
+      const difficultySelect = document.querySelector("#difficulty");
 
       let widths;
       let gameOver;
@@ -316,8 +353,14 @@
       }
 
       function computerMove() {
-        const winningMove = findWinningMove(widths);
-        const move = winningMove || firstSafeMove(widths);
+        const safeMoves = getSafeMoves(widths);
+        const difficulty = difficultySelect.value;
+        const winningMove = difficulty === "easy" || (difficulty === "medium" && Math.random() < 0.5)
+          ? null
+          : findWinningMove(widths);
+        const move = difficulty === "hard"
+          ? winningMove || safeMoves[0]
+          : winningMove || safeMoves[Math.floor(Math.random() * safeMoves.length)];
 
         if (!move) {
           gameOver = true;
@@ -336,13 +379,14 @@
         render();
       }
 
-      function firstSafeMove(state) {
+      function getSafeMoves(state) {
+        const moves = [];
         for (let row = 0; row < SIZE; row += 1) {
           for (let column = 0; column < state[row]; column += 1) {
-            if (row !== SIZE - 1 || column !== 0) return { row, column };
+            if (row !== SIZE - 1 || column !== 0) moves.push({ row, column });
           }
         }
-        return null;
+        return moves;
       }
 
       function findWinningMove(state) {
